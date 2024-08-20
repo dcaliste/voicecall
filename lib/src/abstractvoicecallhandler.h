@@ -73,6 +73,7 @@ public:
     virtual bool isEmergency() const = 0;
     virtual bool isForwarded() const = 0;
     virtual bool isRemoteHeld() const = 0;
+    virtual bool isVideo() const = 0;
     virtual QString parentHandlerId() const = 0;
     virtual QList<AbstractVoiceCallHandler*> childCalls() const = 0;
 
@@ -90,6 +91,7 @@ Q_SIGNALS:
     void multipartyChanged(bool);
     void forwardedChanged(bool);
     void remoteHeldChanged(bool);
+    void videoChanged(bool);
     void parentHandlerIdChanged(QString);
     void childCallsChanged();
 

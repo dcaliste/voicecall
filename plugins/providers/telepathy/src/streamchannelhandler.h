@@ -46,6 +46,7 @@ public:
     bool isEmergency() const;
     bool isForwarded() const;
     bool isRemoteHeld() const;
+    bool isVideo() const override;
     QString parentHandlerId() const override;
     QList<AbstractVoiceCallHandler*> childCalls() const override;
 

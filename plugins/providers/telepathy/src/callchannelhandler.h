@@ -47,6 +47,7 @@ public:
     bool isEmergency() const;
     bool isForwarded() const;
     bool isRemoteHeld() const;
+    bool isVideo() const override;
 
     // TODO: unimplemented
     QString parentHandlerId() const override { return QString(); }

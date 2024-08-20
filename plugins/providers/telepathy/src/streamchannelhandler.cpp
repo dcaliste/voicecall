@@ -63,7 +63,7 @@ public:
     StreamChannelHandlerPrivate(StreamChannelHandler *q, const QString &id, Tp::StreamedMediaChannelPtr c, const QDateTime &s, TelepathyProvider *p)
         : q_ptr(q), pendingHangup(NULL), handlerId(id), provider(p), startedAt(s), status(AbstractVoiceCallHandler::STATUS_NULL),
           channel(c), duration(0), durationTimerId(-1), isEmergency(false),
-          isForwarded(false), isIncoming(false), isRemoteHeld(false)
+          isForwarded(false), isIncoming(false), isRemoteHeld(false), isVideo(false)
     { /* ... */ }
 
     StreamChannelHandler  *q_ptr;
@@ -89,6 +89,7 @@ public:
     bool isForwarded;
     bool isIncoming;
     bool isRemoteHeld;
+    bool isVideo;
 };
 
 StreamChannelHandler::StreamChannelHandler(const QString &id, Tp::StreamedMediaChannelPtr channel, const QDateTime &userActionTime, TelepathyProvider *provider)
@@ -211,6 +212,14 @@ bool StreamChannelHandler::isRemoteHeld() const
     if (!d->channel->isReady())
         return false;
     return d->isRemoteHeld;
+}
+
+bool StreamChannelHandler::isVideo() const
+{
+    Q_D(const StreamChannelHandler);
+    if (!d->channel->isReady())
+        return false;
+    return d->isVideo;
 }
 
 QString StreamChannelHandler::parentHandlerId() const
@@ -468,6 +477,10 @@ void StreamChannelHandler::onStreamedMediaChannelReady(Tp::PendingOperation *op)
         }
     }
 
+    if (d->channel->immutableProperties().value(TP_QT_IFACE_CHANNEL_TYPE_STREAMED_MEDIA+QLatin1String(".InitialVideo")).toBool()) {
+        d->isVideo = true;
+    }
+
     emit lineIdChanged(lineId());
     emit multipartyChanged(isMultiparty());
     emit forwardedChanged(isForwarded());
@@ -517,13 +530,27 @@ void StreamChannelHandler::onStreamedMediaChannelInvalidated(Tp::DBusProxy *, co
 void StreamChannelHandler::onStreamedMediaChannelStreamAdded(const Tp::StreamedMediaStreamPtr &stream)
 {
     TRACE
-    Q_UNUSED(stream)
+    if (stream->type() == Tp::MediaStreamTypeVideo) {
+        Q_D(StreamChannelHandler);
+        bool wasVideo = d->isVideo;
+        d->isVideo = true;
+        if (!wasVideo) {
+            emit videoChanged(d->isVideo);
+        }
+    }
 }
 
 void StreamChannelHandler::onStreamedMediaChannelStreamRemoved(const Tp::StreamedMediaStreamPtr &stream)
 {
     TRACE
-    Q_UNUSED(stream)
+    if (stream->type() == Tp::MediaStreamTypeVideo) {
+        Q_D(StreamChannelHandler);
+        bool wasVideo = d->isVideo;
+        d->isVideo = false;
+        if (wasVideo) {
+            emit videoChanged(d->isVideo);
+        }
+    }
 }
 
 void StreamChannelHandler::onStreamedMediaChannelStreamError(const Tp::StreamedMediaStreamPtr &stream, Tp::MediaStreamError errorCode, const QString &errorMessage)

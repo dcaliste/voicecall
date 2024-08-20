@@ -64,7 +64,7 @@ public:
     CallChannelHandlerPrivate(CallChannelHandler *q, const QString &id, Tp::CallChannelPtr c, const QDateTime &s, TelepathyProvider *p)
         : q_ptr(q), handlerId(id), provider(p), startedAt(s), status(AbstractVoiceCallHandler::STATUS_NULL),
           channel(c), fsChannel(NULL), duration(0), durationTimerId(-1), isEmergency(false),
-          isForwarded(false), isIncoming(false), isRemoteHeld(false)
+          isForwarded(false), isIncoming(false), isRemoteHeld(false), isVideo(false)
     { /* ... */ }
 
     CallChannelHandler  *q_ptr;
@@ -87,6 +87,7 @@ public:
     bool isForwarded;
     bool isIncoming;
     bool isRemoteHeld;
+    bool isVideo;
 };
 
 CallChannelHandler::CallChannelHandler(const QString &id, Tp::CallChannelPtr channel, const QDateTime &userActionTime, TelepathyProvider *provider)
@@ -192,6 +193,15 @@ bool CallChannelHandler::isRemoteHeld() const
     if (!d->channel->isReady())
         return false;
     return d->isRemoteHeld;
+}
+
+bool CallChannelHandler::isVideo() const
+{
+    TRACE
+    Q_D(const CallChannelHandler);
+    if (!d->channel->isReady())
+        return false;
+    return d->isVideo;
 }
 
 AbstractVoiceCallHandler::VoiceCallStatus CallChannelHandler::status() const
@@ -330,6 +340,8 @@ void CallChannelHandler::onCallChannelChannelReady(Tp::PendingOperation *op)
         }
     }
 
+    d->isVideo = d->channel->hasInitialVideo();
+
     d->channel->setRinging();
 
     emit lineIdChanged(lineId());
@@ -408,14 +420,28 @@ void CallChannelHandler::onCallChannelCallStateChanged(Tp::CallState state)
 void CallChannelHandler::onCallChannelCallContentAdded(Tp::CallContentPtr content)
 {
     TRACE
-    Q_UNUSED(content)
+    if (content->type() == Tp::MediaStreamTypeVideo) {
+        Q_D(CallChannelHandler);
+        bool wasVideo = d->isVideo;
+        d->isVideo = true;
+        if (!wasVideo) {
+            emit videoChanged(d->isVideo);
+        }
+    }
 }
 
 void CallChannelHandler::onCallChannelCallContentRemoved(Tp::CallContentPtr content, Tp::CallStateReason reason)
 {
     TRACE
-    Q_UNUSED(content)
     Q_UNUSED(reason)
+    if (content->type() == Tp::MediaStreamTypeVideo) {
+        Q_D(CallChannelHandler);
+        bool wasVideo = d->isVideo;
+        d->isVideo = false;
+        if (wasVideo) {
+            emit videoChanged(d->isVideo);
+        }
+    }
 }
 
 void CallChannelHandler::onCallChannelAcceptCallFinished(Tp::PendingOperation *op)

@@ -169,6 +169,12 @@ bool OfonoVoiceCallHandler::isRemoteHeld() const
     return false;
 }
 
+bool OfonoVoiceCallHandler::isVideo() const
+{
+    TRACE
+    return false;
+}
+
 AbstractVoiceCallHandler::VoiceCallStatus OfonoVoiceCallHandler::status() const
 {
     TRACE

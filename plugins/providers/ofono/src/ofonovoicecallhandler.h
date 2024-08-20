@@ -50,6 +50,7 @@ public:
     bool isEmergency() const;
     bool isForwarded() const;
     bool isRemoteHeld() const;
+    bool isVideo() const;
 
     // TODO: unimplemented - JB#35997
     QString parentHandlerId() const { return QString(); }
